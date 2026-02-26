@@ -1,56 +1,57 @@
-That is perfect! Having Python installed means the "plumbing" is already there.
+Step 3: The "Heart" (Feeling the Vibe)
+Instead of a big, scary AI model, we are going to use a very clever Python library called textblob. It’s simple: it gives any sentence a score from -1 (very sad/angry) to +1 (very happy).
 
-Since the last part felt like a lot, let’s make this 100% practical and very small. We are going to build the "Ear" first. No complex AI logic yet—just a script that listens to you for 5 seconds and tells you what you said.
-
-Step 1: The "Ear" Setup
-We need one specific library called SpeechRecognition. It’s much friendlier for beginners than the professional "streaming" tools we tried earlier.
-
-Open your Terminal (CMD) and run this:
+1. Install the "Heart"
+Open your terminal and run:
 
 Bash
-pip install SpeechRecognition pyttsx3
-(Note: pyttsx3 is the "Mouth"—it lets Python talk back to you!)
+pip install textblob
+2. Update the Code
+We are going to add a few lines to your script. Now, Lumi will listen to you, check your mood, and change her response based on your "vibe."
 
-Step 2: The "Listen & Speak" Script
-Copy this into a new file called test_lumi.py. This is the simplest version of Lumi possible. It will listen, turn your voice into text, and then speak that text back to you.
+Replace your code in test_lumi.py with this:
 
 Python
 import speech_recognition as sr
 import pyttsx3
+from textblob import TextBlob
 
-# 1. Setup the 'Mouth' (Text-to-Speech)
 engine = pyttsx3.init()
-engine.say("Lumi is awake. Talk to me!")
-engine.runAndWait()
-
-# 2. Setup the 'Ear' (Microphone)
 r = sr.Recognizer()
 
 with sr.Microphone() as source:
-    print("Listening...")
+    print("Lumi is feeling your vibe... Speak now!")
     audio = r.listen(source)
 
 try:
-    # Use Google's free service to turn audio into text
     text = r.recognize_google(audio)
     print(f"You said: {text}")
-    
-    # Lumi repeats it back
-    engine.say(f"I heard you say: {text}")
+
+    # --- THE HEART LOGIC ---
+    analysis = TextBlob(text)
+    sentiment = analysis.sentiment.polarity # This is a number between -1 and 1
+
+    if sentiment > 0.1:
+        mood = "You sound happy! That makes me smile."
+    elif sentiment < -0.1:
+        mood = "You sound a bit down. I'm here for you."
+    else:
+        mood = "I hear you loud and clear."
+
+    print(f"Lumi senses: {mood}")
+    engine.say(mood)
     engine.runAndWait()
 
 except:
-    print("Sorry, I didn't catch that.")
-Why this is a win:
-No APIs: It uses a built-in Google engine that doesn't require keys or secrets.
+    print("I'm listening, but I didn't hear anything.")
+How to test the "Heart":
+The Happy Test: Say "I am having an amazing day, everything is perfect!"
 
-Instant Feedback: You’ll hear Lumi’s voice immediately.
+Lumi should notice the positive vibe.
 
-Simple Logic: It’s just "Listen -> Transcribe -> Speak."
+The Sad Test: Say "I am feeling really tired and frustrated today."
 
-Your Task:
-Run python test_lumi.py.
+Lumi should notice the negative vibe.
 
-Say "Hello Lumi, can you hear me?"
-
-If Lumi speaks back to you, you have officially built the Ear and the Mouth.
+Why this is cool:
+You didn't need a massive supercomputer for this. You just taught Python to recognize the "emotional weight" of words.

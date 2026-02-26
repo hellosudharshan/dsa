@@ -1,57 +1,58 @@
-Step 3: The "Heart" (Feeling the Vibe)
-Instead of a big, scary AI model, we are going to use a very clever Python library called textblob. It’s simple: it gives any sentence a score from -1 (very sad/angry) to +1 (very happy).
-
-1. Install the "Heart"
-Open your terminal and run:
-
-Bash
-pip install textblob
-2. Update the Code
-We are going to add a few lines to your script. Now, Lumi will listen to you, check your mood, and change her response based on your "vibe."
-
-Replace your code in test_lumi.py with this:
-
-Python
 import speech_recognition as sr
 import pyttsx3
 from textblob import TextBlob
+import tkinter as tk
+from threading import Thread
 
+# --- SETUP THE BRAIN & MOUTH ---
 engine = pyttsx3.init()
 r = sr.Recognizer()
 
-with sr.Microphone() as source:
-    print("Lumi is feeling your vibe... Speak now!")
-    audio = r.listen(source)
+def update_lumi():
+    while True:
+        with sr.Microphone() as source:
+            # Update label to show she's listening
+            status_label.config(text="Listening...", fg="#FFB6C1")
+            audio = r.listen(source)
 
-try:
-    text = r.recognize_google(audio)
-    print(f"You said: {text}")
+        try:
+            text = r.recognize_google(audio)
+            analysis = TextBlob(text)
+            sentiment = analysis.sentiment.polarity
 
-    # --- THE HEART LOGIC ---
-    analysis = TextBlob(text)
-    sentiment = analysis.sentiment.polarity # This is a number between -1 and 1
+            # Logic to change the Face and the Response
+            if sentiment > 0.1:
+                face_label.config(text="キュ (•◡•) ✨", fg="#FF69B4") # Cute Happy Face
+                response = "You sound so happy! I love that energy!"
+            elif sentiment < -0.1:
+                face_label.config(text="(◕︿◕) ☁️", fg="#ADD8E6") # Cute Sad Face
+                response = "Oh no, I'm sending you a big hug. It's okay to feel sad."
+            else:
+                face_label.config(text="○( ◕‿◕ )○", fg="#D8BFD8") # Neutral/Calm Face
+                response = "I'm listening, darling. Tell me more."
 
-    if sentiment > 0.1:
-        mood = "You sound happy! That makes me smile."
-    elif sentiment < -0.1:
-        mood = "You sound a bit down. I'm here for you."
-    else:
-        mood = "I hear you loud and clear."
+            status_label.config(text=f"I heard: {text}", fg="white")
+            engine.say(response)
+            engine.runAndWait()
 
-    print(f"Lumi senses: {mood}")
-    engine.say(mood)
-    engine.runAndWait()
+        except:
+            status_label.config(text="I'm here for you...", fg="gray")
 
-except:
-    print("I'm listening, but I didn't hear anything.")
-How to test the "Heart":
-The Happy Test: Say "I am having an amazing day, everything is perfect!"
+# --- SETUP THE WINDOW (The Body) ---
+root = tk.Tk()
+root.title("Lumi Empath")
+root.geometry("400x400")
+root.configure(bg="#2C2C2C") # Dark aesthetic
 
-Lumi should notice the positive vibe.
+# The Face
+face_label = tk.Label(root, text="○( ◕‿◕ )○", font=("Helvetica", 40), bg="#2C2C2C", fg="#D8BFD8")
+face_label.pack(expand=True)
 
-The Sad Test: Say "I am feeling really tired and frustrated today."
+# The Status Text
+status_label = tk.Label(root, text="Waiting for you...", font=("Helvetica", 12), bg="#2C2C2C", fg="white")
+status_label.pack(pady=20)
 
-Lumi should notice the negative vibe.
+# Start the 'Ear' in a separate thread so the window doesn't freeze
+Thread(target=update_lumi, daemon=True).start()
 
-Why this is cool:
-You didn't need a massive supercomputer for this. You just taught Python to recognize the "emotional weight" of words.
+root.mainloop()

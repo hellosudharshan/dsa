@@ -1,0 +1,35 @@
+To continue this project on another machine, you need a summary that captures our **technical stack**, the **pivot from Cloud to Local**, and the **specific architecture** we settled on.
+
+Copy and paste this "Context Gist" into your next session:
+
+---
+
+### 📝 Project Context: "Lumi" – Empathic AI Companion
+
+**Current Goal:** Build a fully local (no API) emotionally intelligent chatbot that detects user feelings via voice and responds empathetically with a reactive visual interface.
+
+**Technical Stack (Local/No API):**
+
+* **Speech-to-Text (The Ear):** OpenAI `Whisper` (base model) via Python.
+* **Emotion Analysis (The Heart):** Hugging Face `distilroberta-base-emotion` (Local transformer model).
+* **Conversational Brain:** `Ollama` running `Llama 3`.
+* **Environment:** Windows 11 with `sounddevice` for microphone handling.
+
+**Progress So Far:**
+
+1. Attempted cloud integration with Hume AI, but decided to move **100% Local** for privacy and learning depth.
+2. Verified microphone devices (Device 1: Microphone Array).
+3. Architected the "Sense-Feel-Think" loop where Whisper transcribes voice $\rightarrow$ RoBERTa classifies emotion $\rightarrow$ Ollama generates a response based on that emotion.
+
+**Next Immediate Task:**
+Implementing the **Phase 2: The Face** (Visual GUI). We need to create a simple Python-based window (using `Tkinter` or `PyQt`) that displays a "Cute Face" which changes its expression (Joy, Sadness, Neutral) based on the output of the local emotion classifier.
+
+---
+
+### 🚀 What to do next on your new computer:
+
+1. **Install Ollama** and run `ollama run llama3`.
+2. **Install the Python environment:** `pip install transformers torch whisper-openai sounddevice numpy requests`
+3. **Run a test script** to ensure your microphone is picking up audio through `sounddevice`.
+
+**Would you like me to generate the first "Face" script for you now, so you have the visual code ready for the new computer?**

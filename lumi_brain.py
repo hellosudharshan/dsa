@@ -1,21 +1,58 @@
->python -c "import sounddevice; print(sounddevice.query_devices())"
-   0 Microsoft Sound Mapper - Input, MME (2 in, 0 out)
->  1 Microphone Array (Intel® Smart , MME (2 in, 0 out)
-   2 Microsoft Sound Mapper - Output, MME (0 in, 2 out)
-<  3 Speakers (Realtek(R) Audio), MME (0 in, 2 out)
-   4 Primary Sound Capture Driver, Windows DirectSound (2 in, 0 out)
-   5 Microphone Array (Intel® Smart Sound Technology for Digital Microphones), Windows DirectSound (2 in, 0 out)
-   6 Primary Sound Driver, Windows DirectSound (0 in, 2 out)
-   7 Speakers (Realtek(R) Audio), Windows DirectSound (0 in, 2 out)
-   8 Speakers (Realtek(R) Audio), Windows WASAPI (0 in, 2 out)
-   9 Microphone Array (Intel® Smart Sound Technology for Digital Microphones), Windows WASAPI (2 in, 0 out)
-  10 Speakers (Nahimic mirroring Wave Speaker), Windows WDM-KS (0 in, 2 out)
-  11 Headphones (Realtek HD Audio 2nd output with SST), Windows WDM-KS (0 in, 2 out)
-  12 Speakers (Realtek HD Audio output with SST), Windows WDM-KS (0 in, 2 out)
-  13 Stereo Mix (Realtek HD Audio Stereo input), Windows WDM-KS (2 in, 0 out)
-  14 Microphone (Realtek HD Audio Mic input), Windows WDM-KS (2 in, 0 out)
-  15 Speakers (Nahimic Easy Surround), Windows WDM-KS (0 in, 8 out)
-  16 Microphone Array 1 (), Windows WDM-KS (2 in, 0 out)
-  17 Microphone Array 2 (), Windows WDM-KS (2 in, 0 out)
-  18 Microphone Array 3 (), Windows WDM-KS (4 in, 0 out)
-  19 Microphone Array 4 (), Windows WDM-KS (4 in, 0 out)
+import asyncio
+import os
+import numpy as np
+import sounddevice as sd
+from dotenv import load_dotenv
+from hume import AsyncHumeClient
+
+load_dotenv()
+
+# Audio Settings for Lumi
+CHANNELS = 1
+RATE = 16000  # 16kHz is preferred by Hume
+CHUNK = 1024
+
+async def main():
+    client = AsyncHumeClient(api_key=os.getenv("HUME_API_KEY"))
+
+    try:
+        async with client.empathic_voice.chat.connect() as socket:
+            print("✨ LUMI IS ONLINE (Windows Bridge) ✨")
+
+            # 1. Receiver: Handle Lumi's responses
+            async def handle_messages():
+                async for message in socket:
+                    if message.type == "user_message":
+                        print(f"🎤 You: {message.message.content}")
+                        if hasattr(message.models, "prosody"):
+                            scores = message.models.prosody.scores
+                            top_3 = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:3]
+                            print(f"💙 Sensed: {', '.join([f'{k}: {v:.2f}' for k, v in top_3])}")
+                    elif message.type == "assistant_message":
+                        print(f"🌸 Lumi: {message.message.content}")
+
+            # 2. Sender: Custom Windows Mic Stream
+            async def send_audio():
+                # We use a Queue to pass audio from the mic thread to the async socket
+                loop = asyncio.get_event_loop()
+                queue = asyncio.Queue()
+
+                def callback(indata, frames, time, status):
+                    if status: print(status)
+                    loop.call_soon_threadsafe(queue.put_nowait, indata.copy())
+
+                # Open the microphone (Device 1 from your list)
+                with sd.InputStream(samplerate=RATE, channels=CHANNELS, callback=callback, dtype='int16'):
+                    while True:
+                        data = await queue.get()
+                        # Convert audio to bytes and send to Hume
+                        await socket.send_audio_input(data.tobytes())
+
+            # Run both at the same time
+            await asyncio.gather(handle_messages(), send_audio())
+
+    except Exception as e:
+        print(f"❌ Error: {e}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
